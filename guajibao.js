@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         电子科技大学挂机宝
 // @namespace    www.qqkzw.com
-// @version      2.1.0
+// @version      2.1.1
 // @description  电子科技大学（网络教育）全自动在线挂机学习&自动考试。（雨课堂刷课理论上也支持其他学校使用）
 // @author       Horjer
 // @require      https://cdn.staticfile.org/jquery/1.8.3/jquery.min.js
@@ -27,8 +27,8 @@
 // 该脚本完全免费，仅供学习使用，严谨倒卖！！！ 如果您是通过购买所得，请找卖家退款！！！
 // 尊重作者权益，请勿在未经允许的情况下擅自修改代码和发布到其他平台!
 // 作者: Horjer
-// 更新时间: 2023年09月21日
-// 版本: v2.1.0
+// 更新时间: 2023年09月24日
+// 版本: v2.1.1
 // ****************************************************************************************
 // ==/UserScript==
 
@@ -168,7 +168,7 @@ function studentLearn() {
         courses[i] = {'courseName': courseName, 'courseId': courseId, 'state': '等待学习'};
     }
 
-    // 采集云学堂课程
+    // 采集雨课堂课程
     coursesElement = $("#tblDataList").find("a:contains('学堂在线')");
     for (let i = 0; i < coursesElement.length; i++) {
         var courseElement = $(coursesElement[i]);
@@ -410,6 +410,10 @@ function startLookCurriculum() {
             var href = a.attr("href");
             //if(href && href.indexOf("scorm_content") != -1){
             if (href) {
+                // 关闭自动做作业
+                if (getGjbConfig().ddDoHomework == 0 && a[0].text.indexOf('作业提交') != -1) {
+                    continue;
+                }
                 success = true;
                 window.top.localStorage.setItem("scanLearningProgress", "true"); // 开始监控
                 a[0].click();
@@ -819,12 +823,13 @@ function xl_startLearn() {
             var sign = vue.$data.sign;
             var classroomId = vue.$data.classroom_id; // 教堂ID
             window.learningCourse = window.learningCourse || new Object(); // 学习中的课程
+            window.successOpenCount = window.successOpenCount || 0;
             for (const notSuccessLeaf of notSuccessLeafList) {
                 var leafOpenCount = Object.keys(window.learningCourse).length;
                 var openSize = getGjbConfig().yktNumberOfPlays; // 同时学习多少个课程。配置太多可能会不计学时
                 if (leafOpenCount < openSize && !window.learningCourse.hasOwnProperty(notSuccessLeaf.id)) {
                     window.learningCourse[notSuccessLeaf.id] = notSuccessLeaf;
-                    setTimeout(function () {
+                    setTimeout(() => {
                         console.log(notSuccessLeaf)
                         let title = "";
                         let notSuccessLeafTemp = notSuccessLeaf;
@@ -846,19 +851,38 @@ function xl_startLearn() {
                             offset: ['100px', '80px'],
                             content: window.location.origin + '/pro/lms/' + sign + '/' + classroomId + '/video/' + notSuccessLeaf.id,
                             zIndex: layer.zIndex,
+                            minStack: true,
                             success: function (layero) {
                                 window.learningCourse[notSuccessLeaf.id].layerIndex = index;
                                 layer.setTop(layero);
+
+                                // 最小化窗口，layer自带的最小化方法不会在左下角堆叠
+                                if (getGjbConfig().yktIsMin == 1) {
+                                    $("#layui-layer" + index + " .layui-layer-min").click();
+                                }
+
+                                // 显示课程进度提示
+                                showLearningMsg(notSuccessLeafList.length, ++window.successOpenCount);
                             },
                             end: function () {
                                 console.log("课程已学习完毕，移除课程:", notSuccessLeaf.id);
                                 delete window.learningCourse[notSuccessLeaf.id];
+                                // 显示课程进度提示
+                                showLearningMsg(notSuccessLeafList.length, --window.successOpenCount);
                             }
                         });
                     }, leafOpenCount * 3000);
                 }
             }
         };
+
+        function showLearningMsg(residueQuantity, currentQuantity) {
+            layer.msg('本课程剩余未学习的数量：' + residueQuantity + ", 当前正在学习课程数量：" + currentQuantity, {
+                offset: 't',
+                anim: 1,
+                time: 0
+            });
+        }
 
         // 扫描并学习没有学过的课程
         const scanAndLearning = function () {
@@ -887,6 +911,9 @@ function xl_startLearn() {
                     layer.close(index);
                 });
             }
+
+            // 显示课程进度提示
+            showLearningMsg(notSuccessLeafList.length, window.successOpenCount || 0);
 
             return scanAndLearning;
         };
@@ -1066,8 +1093,10 @@ function getGjbConfig() {
     var gjbConfig = GM_getValue("gjbConfig");
     if (gjbConfig == undefined || gjbConfig == null) {
         gjbConfig = {
-            "yktMultiple": 1,      // 倍数（如果学习进度不更新，把这里改回1倍数）
-            "yktNumberOfPlays": 1  // 同时学习多少个课程。配置太多可能会不计学时
+            "ddDoHomework": 1, // 电大：自动做作业
+            "yktMultiple": 1,      // 雨课堂：倍数（如果学习进度不更新，把这里改回1倍数）
+            "yktNumberOfPlays": 1,  // 雨课堂：同时学习多少个课程。配置太多可能会不计学时
+            "yktIsMin": 0,  // 是雨课堂：否最小化播放
         };
         GM_setValue("gjbConfig", gjbConfig);
     }
@@ -1079,6 +1108,16 @@ function openConfig() {
     layui.use('form', function () {
         var content = `
         <form class="layui-form layui-form-pane" action="" id="gjbConfig">
+          以下是电子科技大学的配置项：
+          <div class="layui-form-item" style="margin-top: 10px" pane>
+            <label class="layui-form-label">自动做作业</label>
+            <div class="layui-input-block">
+              <select name="ddDoHomework" id="ddDoHomework" lay-verify="">
+                  <option value="1">开启</option>
+                  <option value="0">关闭</option>
+                </select>     
+            </div>
+          </div>
           以下是雨课堂的配置项：
           <div class="layui-form-item" style="margin-top: 10px" pane>
             <label class="layui-form-label">视频播放倍数</label>
@@ -1095,9 +1134,19 @@ function openConfig() {
               <input type="number" min="1" value="1" name="yktNumberOfPlays" id="yktNumberOfPlays" required lay-verify="required" class="layui-input">   
             </div>
           </div>
+          <div class="layui-form-item" style="margin-top: 10px" pane>
+            <label class="layui-form-label">最小化播放</label>
+            <div class="layui-input-block">
+              <select name="yktIsMin" id="yktIsMin" lay-verify="">
+                  <option value="0">否</option>
+                  <option value="1">是</option>
+                </select>     
+            </div>
+          </div>
           
           <blockquote class="site-text layui-elem-quote">
-            请谨慎修改视频播放倍数与同时播放的个数，这可能会导致被雨课堂识别为非正常挂课行为，而导致学习进度无法更新。如遇到学习进度无法更新的情况，可以尝试手动清除cookie，并重新登录账号。
+            请谨慎修改视频播放倍数与同时播放的个数，这可能会导致被雨课堂识别为非正常挂课行为，而导致学习进度无法更新。如遇到学习进度无法更新的情况，可以尝试切换（公网）IP地址，手动清除cookie，并重新登录账号。
+            【推荐配置，使用5个窗口，1倍数】
           </blockquote>
         </form>
         `;

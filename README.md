@@ -32,6 +32,12 @@
 ![img](https://greasyfork.s3.us-east-2.amazonaws.com/pjrvs6raqn3mw9ycj6n246bylu2p)
 
 ## 更新记录:
+- 2023年09月24日更新内容（V2.1.1版本）：
+
+  ```
+   1. 电子科技大学，添加是否开启自动做作业的配置项
+   2. 雨课堂页面添加剩余未学习课程和正在学习的课程数量显示
+  ```
 - 2023年09月21日更新内容（V2.1.0版本）：
 
   ```
@@ -231,7 +237,14 @@
 
    ![img](https://greasyfork.s3.us-east-2.amazonaws.com/3cl7pgs6nrax1ivdu8sbpuhezqi4)
 
-   
+## 雨课堂截图:
+* 课程列表：
+
+![img](https://github.com/Horjer/guajibao/blob/main/image/screenshot_04.png)
+
+* 配置项：
+
+![img](https://github.com/Horjer/guajibao/blob/main/image/screenshot_05.png)
 
 ------
 
