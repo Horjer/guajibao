@@ -36,7 +36,8 @@
 
   ```
    1. 电子科技大学，添加是否开启自动做作业的配置项
-   2. 雨课堂页面添加剩余未学习课程和正在学习的课程数量显示
+   2. 雨课堂，添加窗口是否最小化播放的配置项
+   2. 雨课堂，课程列表页面添加剩余未学习课程和正在学习的课程数量显示
   ```
 - 2023年09月21日更新内容（V2.1.0版本）：
 
@@ -240,11 +241,11 @@
 ## 雨课堂截图:
 * 课程列表：
 
-![img](https://github.com/Horjer/guajibao/blob/main/image/screenshot_04.png)
+![img](https://greasyfork.s3.us-east-2.amazonaws.com/odgywu3yxwsce2kwl94vrtzt66ad)
 
 * 配置项：
 
-![img](https://github.com/Horjer/guajibao/blob/main/image/screenshot_05.png)
+![img](https://github.com/Horjer/guajibao/blob/main/image/screenshot_05.png?raw=true)
 
 ------
 
